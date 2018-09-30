@@ -11,19 +11,25 @@ set(CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 
 set(sources src/MPC.cpp src/main.cpp)
 
-include_directories(/usr/local/include)
-link_directories(/usr/local/lib)
 include_directories(src/Eigen-3.3)
+include_directories(/usr/local/include)
+include_directories(/Applications/tools/coin-or/Ipopt-3.12.11/include)
+link_directories(/usr/local/lib)
+link_directories(/Applications/tools/coin-or/Ipopt-3.12.11/lib)
+#include_directories(src/Eigen-3.3)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 include_directories(/usr/local/opt/openssl/include)
 link_directories(/usr/local/opt/openssl/lib)
-link_directories(/usr/local/Cellar/libuv/1*/lib)
+link_directories(/usr/local/Cellar/libuv/1.23.1/lib)
 
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 add_executable(mpc ${sources})
 
 target_link_libraries(mpc ipopt z ssl uv uWS)
+
+
+
 
