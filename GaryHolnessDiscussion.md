@@ -11,7 +11,7 @@ I encountered several issues in getting Ipopt to build on MacOS X.
 The instructions for installing Ipopt given with the assignment
 did not work.
 
-The steps that work for me are adapted from something I was able to find on the web.  It is outdated and had to be changed somewhat.  I am sharing with the hopes that it saves everyone else the time and frustration I had.
+The steps that work for me are adapted from something I was able to find on the web.  It is outdated and had to be changed somewhat.
 
 The instructions off the web I adapted are here:  https://sites.google.com/site/benjaminskrainka/computation-info/building-ipopt
 
