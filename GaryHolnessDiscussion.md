@@ -57,85 +57,73 @@ The instructions off the web I adapted are here:  https://sites.google.com/site/
           include_directories(/Applications/tools/coin-or/Ipopt-3.12.11/include)
           link_directories(/Applications/tools/coin-or/Ipopt-3.12.11/lib)
 
+The instructions for CppAD worked fine (using brew)
 
-* **Ipopt and CppAD:** Please refer to [this document](https://github.com/udacity/CarND-MPC-Project/blob/master/install_Ipopt_CppAD.md) for installation instructions.
-* [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page). This is already part of the repo so you shouldn't have to worry about it.
-* Simulator. You can download these from the [releases tab](https://github.com/udacity/self-driving-car-sim/releases).
-* Not a dependency but read the [DATA.md](./DATA.md) for a description of the data sent back from the simulator.
+## Approach
+
+I began with the MPC Quiz and adapted it to suit the MPC Project
+
+MPC involves a number of state variables including the
+current position in two dimensions along the surface of a map
+in world coordinate frame, the steering angle, the velocity,
+and the acceleration.  
+
+The goal of MPC is, given a series of waypoints, to select
+the control inputs that minimize a cost function.  The control
+inputs are the steering angle and the trottle.   The MPC model
+maintains a model of how the car moves from one time instant
+to the next.  This model is iterated forward in time to
+predict where the car would be as a result of a sequence of
+control actions over future time steps.   A polynomial fit
+is made to a series of waypoints.  A set of points along
+the polynomial fit are sampled in regular increments.
+The points along the polynomial fit are then used
+in an optimization for the control sequence that 
+optimizes an objective that inclues factors such as:
+
+* cross track error
+* orientation error
+* velocity error with respect to a reference velocity
+* steering actuation (delta)
+* throttle (acceleration)
+* derivative for steering signal (derivative by finite difference)
+  to select for smooth steering actuation
+* derivative for throttle signal (derivative by finite difference)
+  to select for smooth throttle actuation
 
 
-## Basic Build Instructions
+The state variables are
 
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./mpc`.
+x- x position on map in world coordinates
+y- y position on map in world coordinates
+psi- orientation on map in world coordinates
+v- velocity (longitudinal at angle psi in direction car is facing)
+cte- cross track error
+epsi- orientation error
 
-## Tips
 
-1. It's recommended to test the MPC on basic examples to see if your implementation behaves as desired. One possible example
-is the vehicle starting offset of a straight line (reference). If the MPC implementation is correct, after some number of timesteps
-(not too many) it should find and track the reference line.
-2. The `lake_track_waypoints.csv` file has the waypoints of the lake track. You could use this to fit polynomials and points and see of how well your model tracks curve. NOTE: This file might be not completely in sync with the simulator so your solution should NOT depend on it.
-3. For visualization this C++ [matplotlib wrapper](https://github.com/lava/matplotlib-cpp) could be helpful.)
-4.  Tips for setting up your environment are available [here](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/23d376c7-0195-4276-bdf0-e02f1f3c665d)
-5. **VM Latency:** Some students have reported differences in behavior using VM's ostensibly a result of latency.  Please let us know if issues arise as a result of a VM environment.
+The model equations are as follows...
 
-## Editor Settings
+x_t+1   = x_t + v_t * cos(psi_t) * dt
+y_t+1   = y_t + v_t * sin(psi_t) * dt
+psi_t+1 = psi_t + v_t/Lf * delta_t * dt
+v_t+1   = v_t + a_t * dt
+cte_t+1 = f(x_t) = y_t + v_t * sin(e_psi_t) * dt
+e_psi_t+1= psi_t - psi_des_t + v_t/Lf * delta-t * dt
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+The MPC controller inputs the state (from waypoint) the
+model (update equations), constraints on variables, and
+cost function (FG_eval) to find the vetctor of control
+inputs that minimizes the cost function.   The Ipopt
+library is used as the solver. 
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+In computing my cost function, I multiplied some terms
+by a scalar to encourage the solver to select control
+action solutions that emphasized certain aspects of
+the cost function more than others.   Specifically
+increase emphasis was placed on CTE (cross track error)
+and the actuation signals. The largest emphasis was
+placed on the derivative of the acutation signal.  This
+encourages the optimizer to select smooth actuations.
 
-## Code Style
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
-
-## Project Instructions and Rubric
-
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
-
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/b1ff3be0-c904-438e-aad3-2b5379f0e0c3/concepts/1a2255a0-e23c-44cf-8d41-39b8a3c8264a)
-for instructions and the project rubric.
-
-## Hints!
-
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
-
-## Call for IDE Profiles Pull Requests
-
-Help your fellow students!
-
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
-
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
-
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
-
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
-
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
