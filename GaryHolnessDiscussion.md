@@ -126,4 +126,8 @@ and the actuation signals. The largest emphasis was
 placed on the derivative of the acutation signal.  This
 encourages the optimizer to select smooth actuations.
 
+## Approach
 
+My result video is posted on my YouTube Channel:
+
+https://www.youtube.com/watch?v=DturRsedlE4
